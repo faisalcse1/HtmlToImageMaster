@@ -72,6 +72,14 @@ namespace HtmlToImageMaster
             throw new Exception("OSX Platform not implemented yet");
         }
 
+        /// <summary>
+        /// Converts a HTML-String into an Image-File as Byte format.
+        /// </summary>
+        /// <param name="html">Raw HTLM as String.</param>
+        /// <param name="width">Width in mm.(Default width 1024)</param>
+        /// <param name="format">JPG or PNG (Default format is JPG)</param>
+        /// <param name="quality">Set image quality between 0 to 100</param>
+        /// <returns></returns>
         public static byte[] FromHtmlString(string html, int width = 1024, ImageFormat format=ImageFormat.Jpg, int quality = 100)
         {
             string text = Path.Combine(directory, $"{Guid.NewGuid()}.html");
@@ -80,7 +88,15 @@ namespace HtmlToImageMaster
             File.Delete(text);
             return result;
         }
-
+        /// <summary>
+        /// Converts a HTML-Page into an Image-File as Byte format.
+        /// </summary>
+        /// <param name="url">Valid http(s)://example.com URL</param>
+        /// <param name="width">Width in mm.(Default width 1024)</param>
+        /// <param name="format">JPG or PNG (Default format is JPG)</param>
+        /// <param name="quality">Set image quality between 0 to 100</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public static byte[] FromUrl(string url, int width = 1024, ImageFormat format = ImageFormat.Jpg, int quality = 100)
         {
             string text = format.ToString().ToLower();
