@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net4.7.2;net4.8;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>HtmlToImageMaster</Title>
+		<PackageProjectUrl>https://github.com/faisalcse1/HtmlToImageMaster</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/faisalcse1/HtmlToImageMaster</RepositoryUrl>
+		<Authors>MD FAISAL</Authors>
+		<Company>Programming Palli</Company>
+		<Copyright>2024 Programming Palli</Copyright>
+		<PackageTags>img; converter; html2image; htmltoimage; html; library; html-to-pdf; pdf-converter; html-to-pdf-converter; sdk; html-to-img-net; pdf-library; pdf-sdk; html-to-img-converter-net; free-html-to-image; free-img-library; free-html-to-img-converter; free-html-to-img-net; html-to-img-c#;htmltoimg;htmltoimgconverter; corehtmltoimg;wkhtmltoimg</PackageTags>
+		<Description>HTML to image Converter for .NET Core - Community Edition is a free, streamlined version of the HtmlToPdfMaster Library for .NET Core, offering robust HTML to Image conversion capabilities to the community.</Description>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<AssemblyName>HtmlToImageMaster</AssemblyName>
+		<RootNamespace>HtmlToImageMaster</RootNamespace>
+		<Version>1.0.0.1</Version>
+		<PackageId>HtmlToImageMaster</PackageId>
+	</PropertyGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="wkhtmltoimage.exe">
+			<IncludeInPackage>true</IncludeInPackage>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</EmbeddedResource>
+	</ItemGroup>
+</Project>
+
