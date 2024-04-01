@@ -1,45 +1,54 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Xml.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace HtmlToImageMaster
 {
     /// <summary>
     /// Html Converter. Converts HTML string and URLs to image bytes
     /// </summary>
-    public class HtmlConverter
+    public static class HtmlConverter
     {
-        private static string toolFilename = "wkhtmltoimage";
+        private static string toolFilename;
+
         private static string directory;
+
         private static string toolFilepath;
 
         static HtmlConverter()
         {
+            toolFilename = "wkhtmltoimage";
             directory = AppContext.BaseDirectory;
-
-            //Check on what platform we are
-            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 toolFilepath = Path.Combine(directory, toolFilename + ".exe");
-
-                if (!File.Exists(toolFilepath))
+                if (File.Exists(toolFilepath))
                 {
-                    var assembly = typeof(HtmlConverter).GetTypeInfo().Assembly;
-                    var type = typeof(HtmlConverter);
-                    var ns = type.Namespace;
-
-                    using (var resourceStream = assembly.GetManifestResourceStream($"{ns}.{toolFilename}.exe"))
-                    using (var fileStream = File.OpenWrite(toolFilepath))
-                    {
-                        resourceStream.CopyTo(fileStream);
-                    }
+                    return;
                 }
+
+                Assembly assembly = typeof(HtmlConverter).GetTypeInfo().Assembly;
+                string @namespace = typeof(HtmlConverter).Namespace;
+                using (Stream stream = assembly.GetManifestResourceStream(@namespace + "." + toolFilename + ".exe"))
+                {
+                    using (FileStream destination = File.OpenWrite(toolFilepath))
+                    {
+                        stream.CopyTo(destination);
+                    }
+                    
+                }
+
+                return;
             }
-            else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                //Check if wkhtmltoimage package is installed on this distro in using which command
-                Process process = Process.Start(new ProcessStartInfo()
+                Process process = Process.Start(new ProcessStartInfo
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
@@ -48,68 +57,35 @@ namespace HtmlToImageMaster
                     RedirectStandardError = true,
                     FileName = "/bin/bash",
                     Arguments = "which wkhtmltoimage"
-
                 });
-                string answer = process.StandardOutput.ReadToEnd();
+                string text = process.StandardOutput.ReadToEnd();
                 process.WaitForExit();
-
-                if (!string.IsNullOrEmpty(answer) && answer.Contains("wkhtmltoimage"))
+                if (!string.IsNullOrEmpty(text) && text.Contains("wkhtmltoimage"))
                 {
                     toolFilepath = "wkhtmltoimage";
+                    return;
                 }
-                else
-                {
-                    throw new Exception("wkhtmltoimage does not appear to be installed on this linux system according to which command; go to https://wkhtmltopdf.org/downloads.html");
-                }
+
+                throw new Exception("wkhtmltoimage does not appear to be installed on this linux system according to which command; go to https://wkhtmltopdf.org/downloads.html");
             }
-            else
-            {
-                //OSX not implemented
-                throw new Exception("OSX Platform not implemented yet");
-            }
+
+            throw new Exception("OSX Platform not implemented yet");
         }
 
-        /// <summary>
-        /// Converts a HTML-String into an PDF-File as Byte format.
-        /// </summary>
-        /// <param name="html">Raw HTLM as String.</param>        
-        /// <param name="width">Width in mm.</param>
-        /// <param name="height">Height in mm</param>
-        /// <param name="encoding">Set the default text encoding, for input.</param>
-        /// <returns></returns>
-        public static byte[] FromHtmlString(string html, int width, int height,int quality=100,int dpi=100, int margin_left = 0, int margin_top = 0, int margin_right = 0, int margin_bottom = 0, string encoding = "UTF-8")
+        public static byte[] FromHtmlString(string html, int width = 1024, ImageFormat format=ImageFormat.Jpg, int quality = 100,int dpi=100)
         {
-            var filename = Path.Combine(directory, $"{Guid.NewGuid()}.html");
-            File.WriteAllText(filename, html);
-            var bytes = FromUrl(filename, width, height,quality,dpi, margin_left, margin_top, margin_right, margin_bottom, encoding);
-            File.Delete(filename);
-            return bytes;
+            string text = Path.Combine(directory, $"{Guid.NewGuid()}.html");
+            File.WriteAllText(text, html);
+            byte[] result = FromUrl(text, width, format, quality,dpi);
+            File.Delete(text);
+            return result;
         }
 
-        /// <summary>
-        /// Converts a HTML-Page into an PDF-File as Byte format.
-        /// </summary>
-        /// <param name="url">Valid http(s)://example.com URL</param>        
-        /// <param name="width">Width in mm.</param>
-        /// <param name="height">Height in mm</param>
-        /// <param name="encoding">Set the default text encoding, for input.</param>
-        /// <returns></returns>
-        public static byte[] FromUrl(string url, int width, int height,int quality=100,int dpi=100, int margin_left = 0, int margin_top = 0, int margin_right = 0, int margin_bottom = 0, string encoding = "UTF-8")
+        public static byte[] FromUrl(string url, int width = 1024, ImageFormat format = ImageFormat.Jpg, int quality = 100,int dpi=100)
         {
-            var filename = Path.Combine(directory, $"{Guid.NewGuid().ToString()}.img");
-
-            string args;
-
-            if (IsLocalPath(url))
-            {
-                args = $" --encoding {encoding} --page-height {height} --page-width {width} --lowquality --image-quality {quality} --image-dpi {dpi} --disable-smart-shrinking --margin-bottom {margin_bottom} --margin-left {margin_left} --margin-right {margin_right} --margin-top {margin_top} \"{url}\" \"{filename}\"";
-            }
-            else
-            {
-                args = $"oding {encoding} --page-height {height} --page-width {width} --lowquality --image-quality {quality} --image-dpi {dpi} --disable-smart-shrinking --margin-bottom {margin_bottom} --margin-left {margin_left} --margin-right {margin_right} --margin-top {margin_top} \"{url}\" \"{filename}\"";
-            }
-
-            Process process = Process.Start(new ProcessStartInfo(toolFilepath, args)
+            string text = format.ToString().ToLower();
+            string text2 = Path.Combine(directory, Guid.NewGuid().ToString() + "." + text);
+            Process process = Process.Start(new ProcessStartInfo(arguments: (!IsLocalPath(url)) ? $"--quality {quality} --dpi {dpi} --width {width} -f {text} {url} \"{text2}\"" : $"--quality {quality} --width {width} -f {text} \"{url}\" \"{text2}\"", fileName: toolFilepath)
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
                 CreateNoWindow = true,
@@ -117,15 +93,13 @@ namespace HtmlToImageMaster
                 WorkingDirectory = directory,
                 RedirectStandardError = true
             });
-
             process.ErrorDataReceived += Process_ErrorDataReceived;
             process.WaitForExit();
-
-            if (File.Exists(filename))
+            if (File.Exists(text2))
             {
-                var bytes = File.ReadAllBytes(filename);
-                File.Delete(filename);
-                return bytes;
+                byte[] result = File.ReadAllBytes(text2);
+                File.Delete(text2);
+                return result;
             }
 
             throw new Exception("Something went wrong. Please check input parameters");
