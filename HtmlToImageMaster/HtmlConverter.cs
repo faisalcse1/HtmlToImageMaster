@@ -72,20 +72,20 @@ namespace HtmlToImageMaster
             throw new Exception("OSX Platform not implemented yet");
         }
 
-        public static byte[] FromHtmlString(string html, int width = 1024, ImageFormat format=ImageFormat.Jpg, int quality = 100,int dpi=100)
+        public static byte[] FromHtmlString(string html, int width = 1024, ImageFormat format=ImageFormat.Jpg, int quality = 100)
         {
             string text = Path.Combine(directory, $"{Guid.NewGuid()}.html");
             File.WriteAllText(text, html);
-            byte[] result = FromUrl(text, width, format, quality,dpi);
+            byte[] result = FromUrl(text, width, format, quality);
             File.Delete(text);
             return result;
         }
 
-        public static byte[] FromUrl(string url, int width = 1024, ImageFormat format = ImageFormat.Jpg, int quality = 100,int dpi=100)
+        public static byte[] FromUrl(string url, int width = 1024, ImageFormat format = ImageFormat.Jpg, int quality = 100)
         {
             string text = format.ToString().ToLower();
             string text2 = Path.Combine(directory, Guid.NewGuid().ToString() + "." + text);
-            Process process = Process.Start(new ProcessStartInfo(arguments: (!IsLocalPath(url)) ? $"--quality {quality} --dpi {dpi} --width {width} -f {text} {url} \"{text2}\"" : $"--quality {quality} --width {width} -f {text} \"{url}\" \"{text2}\"", fileName: toolFilepath)
+            Process process = Process.Start(new ProcessStartInfo(arguments: (!IsLocalPath(url)) ? $"--quality {quality} --width {width} -f {text} {url} \"{text2}\"" : $"--quality {quality} --width {width} -f {text} \"{url}\" \"{text2}\"", fileName: toolFilepath)
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
                 CreateNoWindow = true,
